@@ -9,38 +9,24 @@
     <body>
         <div class="content">
 
-
-            <div class="date-select">
-                <label for="date">Select Date:</label>
-                <input type="date" id="date" name="date" />
-            </div>
-
-
-            <div class="checkboxes">
-                <label>
-                    <input type="checkbox" id="toggleImage1" checked />
-                    Earth Map
-                </label>
-                <label>
-                    <input type="checkbox" id="toggleImage2" checked />
-                    Borders
-                </label>
-                <label>
-                    <input type="checkbox" id="toggleImage3" checked />
-                    Data Variable
-                </label>
-            </div>
-
-
             <div class="image-container">
 
                 <!--<p id="loading">Loading...</p>-->
+                <!--
                 <img id="image" style="display:none;" alt="Earth"
-                                                      class="earth-img" />
-                <img id="image" style="display:none;" alt="Borders"
-                                                      class="line-img" />
+                                                      class="earth-img">
                 <img id="image" style="display:none;" alt="Data"
-                                                      class="data-img" />
+                                                      class="var1-img">
+                <img id="image" style="display:none;" alt="Borders"
+                                                      class="border-img">
+                -->
+
+                <img src="/src/assets/images/1296x648_0_NoBathymetry.png"
+                     alt="Earth Map" class="earth-img">
+                <img src="/src/assets/images/test_variable.png"
+                     alt="Variable 1" class="var1-img">
+                <img src="/src/assets/images/1296x648_0_LandBorders.png"
+                     alt="Country Borders" class="border-img">
 
 
 
@@ -50,6 +36,32 @@
                     <img src="/image2.png" alt="Image 2" class="image2" />
                     <img src="/image3.png" alt="Image 3" class="image3" />
                 -->
+            </div>
+
+
+            <div class="form-container">
+
+                <div class="date-select">
+                    <label for="date">Select Date:</label>
+                    <input type="date" id="date" name="date" />
+                </div>
+
+
+                <div class="variable-select">
+                    <label>
+                        <input type="checkbox" id="toggleEarth" checked />
+                        Earth Map
+                    </label>
+                    <label>
+                        <input type="checkbox" id="toggleVar1" checked />
+                        Data Variable 1
+                    </label>
+                    <label>
+                        <input type="checkbox" id="toggleBorders" checked />
+                        Borders
+                    </label>
+                </div>
+
             </div>
 
         </div>

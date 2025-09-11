@@ -22,12 +22,12 @@ app = FastAPI()
 
 
 
-@app.get("/data_image") ##TODO add variable arg, min/max
+@app.get("/data_image") ##TODO add variable arg, date, min/max?
 async def get_image():
 
-    ##TODO separate netcdf reading, image creation to module(s)
+    ##TODO Separate netcdf reading, image creation to module(s)
 
-
+    ##TODO Replace this test netcdf with the value from date selector
     nc_file = Path("./data", "UV_pred_2025-07-02T00Z_001.nc")
     # nc_file = "UV_pred_2025-07-02T00Z_001.nc"
 

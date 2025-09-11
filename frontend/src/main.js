@@ -1,26 +1,26 @@
 // main.js
 
 // Get references to the checkboxes
-const toggleImage1 = document.getElementById('toggleImage1');
-const toggleImage2 = document.getElementById('toggleImage2');
-const toggleImage3 = document.getElementById('toggleImage3');
+const toggleEarth = document.getElementById('toggleEarth');
+const toggleVar1 = document.getElementById('toggleVar1');
+const toggleBorders = document.getElementById('toggleBorders');
 
 // Get references to the images
-const image1 = document.querySelector('.image1');
-const image2 = document.querySelector('.image2');
-const image3 = document.querySelector('.image3');
+const earthImg = document.querySelector('.earth-img');
+const var1Img = document.querySelector('.var1-img');
+const borderImg = document.querySelector('.border-img');
 
 // Function to toggle visibility of images based on checkbox state
 function toggleImageVisibility() {
-  image1.style.display = toggleImage1.checked ? 'block' : 'none';
-  image2.style.display = toggleImage2.checked ? 'block' : 'none';
-  image3.style.display = toggleImage3.checked ? 'block' : 'none';
+  earthImg.style.display = toggleEarth.checked ? 'block' : 'none';
+  var1Img.style.display = toggleVar1.checked ? 'block' : 'none';
+  borderImg.style.display = toggleBorders.checked ? 'block' : 'none';
 }
 
 // Attach event listeners to checkboxes to call toggle function when clicked
-toggleImage1.addEventListener('change', toggleImageVisibility);
-toggleImage2.addEventListener('change', toggleImageVisibility);
-toggleImage3.addEventListener('change', toggleImageVisibility);
+toggleEarth.addEventListener('change', toggleImageVisibility);
+toggleVar1.addEventListener('change', toggleImageVisibility);
+toggleBorders.addEventListener('change', toggleImageVisibility);
 
 // Initial call to set the initial visibility based on checkbox state
 toggleImageVisibility();

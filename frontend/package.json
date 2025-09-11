@@ -1,16 +1,16 @@
 {
-  "name": "image-layer-html-test",
+  "name": "credit-viewer",
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
   "scripts": {
-      "dev": "vite",
-      "build": "vite build",
-      "preview": "vite preview"
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "",
   "devDependencies": {
     "vite": "^7.1.5"
   }

@@ -9,7 +9,7 @@ body {
     background-color: #f0f0f0;
 }
 
-.controls {
+.checkboxes {
     margin-bottom: 20px;
     display: flex;
     flex-direction: column;  /* This makes the checkboxes stack vertically */
@@ -29,14 +29,14 @@ body {
     object-fit: contain;
 }
 
-.image1 {
+.earth-img {
     z-index: 1;
 }
 
-.image2 {
+.line-img {
     z-index: 2;
 }
 
-.image3 {
+.data-img {
     z-index: 3;
 }

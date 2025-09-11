@@ -16,8 +16,8 @@ COPY . /frontend
 # Build the Vite app
 RUN npm run build
 
-# Set up the static folder (Vite build output)
-# RUN cp -r /frontend/dist /usr/share/nginx/html
+# Ensure the dist folder is copied to the shared volume so NGINX can use it
+RUN cp -r ./dist /frontend-static/
 
 # Expose the NGINX port
 EXPOSE 80

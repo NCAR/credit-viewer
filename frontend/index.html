@@ -1,33 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-    <title>Layered Transparent Images</title>
-    <link rel="stylesheet" href="/src/style.css" />
-  </head>
-  <body>
-    <div class="controls">
-      <label>
-        <input type="checkbox" id="toggleImage1" checked />
-        Show Image 1
-      </label>
-      <label>
-        <input type="checkbox" id="toggleImage2" checked />
-        Show Image 2
-      </label>
-      <label>
-        <input type="checkbox" id="toggleImage3" checked />
-        Show Image 3
-      </label>
-    </div>
+    <head>
+        <meta charset="UTF-8" />
+        <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+        <title>CREDIT Data Explorer</title>
+        <link rel="stylesheet" href="/src/style.css" />
+    </head>
+    <body>
+        <div class="content">
 
-    <div class="image-container">
-      <img src="/image1.png" alt="Image 1" class="image1" />
-      <img src="/image2.png" alt="Image 2" class="image2" />
-      <img src="/image3.png" alt="Image 3" class="image3" />
-    </div>
+            <div class="checkboxes">
+                <label>
+                    <input type="checkbox" id="toggleImage1" checked />
+                    Earth Map
+                </label>
+                <label>
+                    <input type="checkbox" id="toggleImage2" checked />
+                    Borders
+                </label>
+                <label>
+                    <input type="checkbox" id="toggleImage3" checked />
+                    Data Variable
+                </label>
+            </div>
 
-    <script type="module" src="/src/main.js"></script>
-  </body>
+            <div class="image-container">
+
+                <!--<p id="loading">Loading...</p>-->
+                <img id="image" style="display:none;" alt="Earth"
+                            class="earth-img" />
+                <img id="image" style="display:none;" alt="Borders"
+                            class="line-img" />
+                <img id="image" style="display:none;" alt="Data"
+                            class="data-img" />
+
+
+
+
+                <!--
+                    <img src="/image1.png" alt="Image 1" class="image1" />
+                    <img src="/image2.png" alt="Image 2" class="image2" />
+                    <img src="/image3.png" alt="Image 3" class="image3" />
+                -->
+            </div>
+
+        </div>
+
+        <script type="module" src="/src/main.js"></script>
+        <!--
+        <script type="module" src="/src/fetchImage.js"></script>
+        -->
+    </body>
 </html>

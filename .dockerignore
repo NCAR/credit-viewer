@@ -9,20 +9,17 @@ __pycache__
 *.pyo
 *.pyd
 
-.env*
+node_modules
 
-frontend-static
+dist
+build
 
-.vite
-*.log
+.env
+
+Dockerfile
 
 logs
 tmp
-
-build
-dist
-
-node_modules
 
 
 # Development

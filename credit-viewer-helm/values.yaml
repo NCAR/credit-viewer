@@ -1,0 +1,14 @@
+replicaCount: 1
+
+webapp:
+  name: credit-viewer
+  group: credit-viewer
+  path: /
+  tls:
+    fqdn: credit-viewer.k8s.ucar.edu
+    secretName: incommon-cert-credit-viewer
+  container: 
+    image: docker.io/mattrncar/actix-docker-image:v1
+    port: 8080
+    memory: 1G
+    cpu: 2

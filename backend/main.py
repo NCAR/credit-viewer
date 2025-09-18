@@ -1,9 +1,7 @@
 from fastapi import FastAPI
 from fastapi.responses import Response
-from pathlib import Path
 from io import BytesIO
-from PIL import Image
-import xarray as xr
+from ./netcdf_reader import *
 
 
 
@@ -21,11 +19,16 @@ app = FastAPI()
 
 
 
+##TODO function to generate list of netcdf files
 
-@app.get("/data_image") ##TODO add variable arg, date, min/max?
+
+
+
+
+
+@app.get("/data_image")
 async def get_image():
 
-    ##TODO Separate netcdf reading, image creation to module(s)
 
     ##TODO Replace this test netcdf with the value from date selector
     nc_file = Path("./data", "UV_pred_2025-07-02T00Z_001.nc")

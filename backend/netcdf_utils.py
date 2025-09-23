@@ -21,7 +21,7 @@ def netcdf_reader(netcdf_path):
 
 
 
-def variable_data(netcdf_file, variable_name, timestep, level)
-    return np.array(netcdf_file.variable_name[timestep, level]
+def variable_data(netcdf_file, variable_name, timestep, level):
+    return np.array(netcdf_file.variable_name[timestep,level,:,:])
 
 

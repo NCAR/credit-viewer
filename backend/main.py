@@ -1,11 +1,13 @@
 from fastapi import FastAPI
 from fastapi.responses import Response
 from io import BytesIO
-from ./netcdf_reader import *
+from netcdf_utils import *
 
 
 
 app = FastAPI()
+
+
 
 # @app.get("/")
 # def read_root():

@@ -3,23 +3,135 @@
     <head>
         <meta charset="UTF-8" />
         <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
-        <title>CREDIT Data Explorer</title>
+        <title>CREDIT Viewer</title>
         <link rel="stylesheet" href="/src/style.css" />
     </head>
+
     <body>
+        <header>
+            <h1>CREDIT Viewer</h1>
+        </header>
+
+        <main class="grid-container">
+
+            <div class="image-section">
+                <div id="panzoom-container">
+
+                    <!--img src="/2160x1080_0_All.png" alt="Scientific Visualization" id="zoom-image"/-->
+
+                <img src="/src/assets/images/1296x648_0_NoBathymetry.png"
+                     alt="Earth Map" class="earth-img">
+                <img src="/src/assets/images/test_variable.png"
+                     alt="Variable 1" class="var1-img">
+                <img src="/src/assets/images/test_variable.png"
+                     alt="Variable 2" class="var2-img">
+                <img src="/src/assets/images/test_variable.png"
+                     alt="Variable 3" class="var3-img">
+                <img src="/src/assets/images/test_variable.png"
+                     alt="Variable 4" class="var4-img">
+                <img src="/src/assets/images/test_variable.png"
+                     alt="Variable 5" class="var5-img">
+                <img src="/src/assets/images/1296x648_0_LandBorders.png"
+                     alt="Country Borders" class="border-img">
+
+                </div>
+            </div>
+
+
+
+            <div class="text-section">
+                <h2>NetCDF Info</h2>
+                <!--label for="user-select">Select user:</label-->
+                <select id="file-select">
+                    <option value="nc1">QTUV_pred_2025-07-02T00Z_001.nc
+</option>
+                    <option value="nc2">QTUV_pred_2025-07-03T00Z_001.nc
+</option>
+                    <option value="nc3">QTUV_pred_2025-07-04T00Z_001.nc
+</option>
+                </select>
+
+                <div id="file-info" style="margin-top: 1rem;">
+                    <p>Loading...</p>
+                </div>
+            </div>
+
+
+
+                <div class="checkbox-section">
+                    <h3>Variable Select</h3>
+
+                    <form id="variable-form">
+
+                        <!--
+                        <label><input type="checkbox" name="name" checked /> Name</label><br />
+                        <label><input type="checkbox" name="email" /> Email</label><br />
+                        <label><input type="checkbox" name="age" /> Age</label><br />
+                        <label><input type="checkbox" name="location" checked /> Location</label>
+                        -->
+
+
+                    <label>
+                        <input type="checkbox" id="toggleEarth" checked />
+                        Earth Map
+                    </label>
+                    <label>
+                        <input type="checkbox" id="toggleVar1" />
+                        Wind Magnitude: (U^2 + V^2)^.5
+                    </label>
+                    <label>
+                        <input type="checkbox" id="toggleVar2" />
+                        U: U component of wind
+                    </label>
+                    <label>
+                        <input type="checkbox" id="toggleVar3" />
+                        V: V component of wind
+                    </label>
+                    <label>
+                        <input type="checkbox" id="toggleVar4" />
+                        T: Temperature
+                    </label>
+                    <label>
+                        <input type="checkbox" id="toggleVar5" />
+                        Q: Specific humidity
+                    </label>
+                    <label>
+                        <input type="checkbox" id="toggleBorders" checked />
+                        Borders
+                    </label>
+
+
+
+                    </form>
+                </div>
+        </main>
+
+        <footer>
+            <!--p>&copy; 2025 My Lab or Co.</p-->
+            <p>Footer Placeholder</p>
+        </footer>
+
+        <script type="module" src="/src/main.js"></script>
+    </body>
+
+
+</html>
+
+
+
+
+
+
+<!--
+
+    <body>
+
+
+
         <div class="content">
 
             <div class="image-container">
 
-                <!--<p id="loading">Loading...</p>-->
-                <!--
-                <img id="image" style="display:none;" alt="Earth"
-                                                      class="earth-img">
-                <img id="image" style="display:none;" alt="Data"
-                                                      class="var1-img">
-                <img id="image" style="display:none;" alt="Borders"
-                                                      class="border-img">
-                -->
 
                 <img src="/src/assets/images/1296x648_0_NoBathymetry.png"
                      alt="Earth Map" class="earth-img">
@@ -31,11 +143,6 @@
 
 
 
-                <!--
-                    <img src="/image1.png" alt="Image 1" class="image1" />
-                    <img src="/image2.png" alt="Image 2" class="image2" />
-                    <img src="/image3.png" alt="Image 3" class="image3" />
-                -->
             </div>
 
 
@@ -67,8 +174,5 @@
         </div>
 
         <script type="module" src="/src/main.js"></script>
-        <!--
-            <script type="module" src="/src/fetchImage.js"></script>
-            -->
     </body>
-</html>
+    -->

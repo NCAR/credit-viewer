@@ -28,5 +28,7 @@ node_modules
 # Development
 image?.png
 test_variable.png
+m.png
+t.png
 *.nc
 

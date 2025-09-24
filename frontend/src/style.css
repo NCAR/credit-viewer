@@ -26,7 +26,8 @@ body {
 .image-section {
     grid-column: 1 / span 8;
     grid-row: 1 / span 12;
-    background-color: #dde4ea;
+    /* background-color: #dde4ea; */
+    background-color: #2f2f2f;
     display: flex;
     align-items: stretch;
     justify-content: center;

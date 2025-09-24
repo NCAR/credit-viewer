@@ -1,4 +1,4 @@
-import Panzoom from '@panzoom/panzoom';
+import Panzoom from "@panzoom/panzoom";
 
 
 

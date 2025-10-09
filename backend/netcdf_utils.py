@@ -1,11 +1,8 @@
 import xarray as xr
 from pathlib import Path
+import numpy as np
 
 
-
-
-##TODO Change this to CREDIT output dir
-NETCDF_DIR = "./data"
 
 
 
@@ -21,7 +18,8 @@ def netcdf_reader(netcdf_path):
 
 
 
-def variable_data(netcdf_file, variable_name, timestep, level):
-    return np.array(netcdf_file.variable_name[timestep,level,:,:])
+def get_variable_data(netcdf_data, variable_name, timestep, level):
+    variable = getattr(netcdf_data, variable_name)
+    return np.array(variable[timestep,level,:,:])
 
 

@@ -1,6 +1,7 @@
 fastapi
 uvicorn
 gunicorn
-Pillow
+numpy
 xarray
-
+netcdf4
+pyarrow

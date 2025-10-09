@@ -1,23 +1,18 @@
-// TODO This is a temp main.js to test apache-arrow
+import { tableFromIPC } from "apache-arrow";
 
+async function fetchArrow() {
+    const response = await fetch("/api/get_data");
+    const arrayBuffer = await response.arrayBuffer();
+    const table = tableFromIPC(new Uint8Array(arrayBuffer));
 
-import * as arrow from 'apache-arrow';
+    const values = table.getChild("variable_data").toArray();
+    // const reshaped = Array.from({ length: 200 }, (_, i) =>
+      // values.slice(i * 400, (i + 1) * 400)
+    // );
 
-async function fetchApacheData() {
-  const response = await fetch("/api/get_data");
-  const arrayBuffer = await response.arrayBuffer();
+    console.log(values.length);
+    console.log(values.slice(0, 10));
 
-  // Parse Arrow table
-  const table = arrow.tableFromIPC(arrayBuffer);
-
-  // Access the column
-  // // const column = table.getChild('numbers');
-  const column = table.getChild('variable_data');
-  const numbers = column.toArray();
-
-  console.log("Total numbers:", numbers.length);
-  console.log("First 10 numbers:", numbers.slice(0, 10));
 }
 
-fetchApacheData().catch(console.error);
-
+fetchArrow().catch(console.error);

@@ -44,9 +44,27 @@ def get_data():
                     netcdf_data, variable_name, timestep, level) 
 
 
-    # Send array with Apache Arrow
 
-    # In-memory stream for the full Arrow IPC stream
+
+
+    #-- Send NumPy Array ------------------------------------------------------
+
+    # arrayBuffer = io.BytesIO()
+    # np.save(arrayBuffer, variable_data)
+    # arrayBuffer.seek(0)
+
+    # return StreamingResponse(
+        # arrayBuffer,
+        # media_type="application/octet-stream"
+    # )
+
+
+
+
+
+
+    #-- Send array with Apache Arrow ------------------------------------------
+
     stream = io.BytesIO()
 
     table = pa.table({'variable_data': variable_data.flatten()})

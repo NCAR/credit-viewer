@@ -5,13 +5,18 @@ async function fetchArrow() {
     const arrayBuffer = await response.arrayBuffer();
     const table = tableFromIPC(new Uint8Array(arrayBuffer));
 
-    const values = table.getChild("variable_data").toArray();
-    // const reshaped = Array.from({ length: 200 }, (_, i) =>
-      // values.slice(i * 400, (i + 1) * 400)
-    // );
+    const variable_data = table.getChild("variable_data").toArray();
 
-    console.log(values.length);
-    console.log(values.slice(0, 10));
+    const metadata = table.schema.metadata;
+    const rows = parseInt(metadata.get("rows"));
+    const cols = parseInt(metadata.get("cols"));
+
+    const reshaped_data = Array.from({ length: rows }, (_, i) =>
+        variable_data.slice(i * cols, (i + 1) * cols)
+    );
+
+    console.log(rows, cols);
+    console.log(reshaped_data[0].slice(0, 10));
 
 }
 

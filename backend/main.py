@@ -65,9 +65,22 @@ def get_data():
 
     #-- Send array with Apache Arrow ------------------------------------------
 
+    # NOTE Might be able to send Zarr files directly from
+        # CREDIT output to the client
+
+
     stream = io.BytesIO()
 
     table = pa.table({'variable_data': variable_data.flatten()})
+
+    # Metadata for client
+    ##TODO Add netcdf info later
+    rows, cols = variable_data.shape
+
+    table = table.replace_schema_metadata({
+        "rows": str(rows),
+        "cols": str(cols),
+    })
 
     with pa.ipc.new_stream(stream, table.schema) as writer:
         writer.write_table(table)

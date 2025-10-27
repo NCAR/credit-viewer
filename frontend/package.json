@@ -15,6 +15,7 @@
     "vite": "^7.1.5"
   },
   "dependencies": {
+    "@panzoom/panzoom": "^4.6.0",
     "apache-arrow": "^11.0.0",
     "numpy-parser": "^1.2.3"
   }

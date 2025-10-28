@@ -1,20 +1,20 @@
 services:
-  backend:
+  credit-viewer-backend:
     build:
       context: .
       dockerfile: backend/Dockerfile
-    container_name: backend
-    image: mattrncar/backend:v1
+    container_name: credit-viewer-backend
+    image: mattrncar/credit-viewer-backend:v1
     ports:
       - "8000:8000"
 
-  nginx:
+  credit-viewer-nginx:
     build:
       context: .
       dockerfile: nginx/Dockerfile
-    container_name: nginx
-    image: mattrncar/nginx:v1
+    container_name: credit-viewer-nginx
+    image: mattrncar/credit-viewer-nginx:v1
     ports:
       - "8080:80"
     depends_on:
-      - backend
+      - credit-viewer-backend

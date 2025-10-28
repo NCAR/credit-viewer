@@ -8,7 +8,7 @@ webapp:
     fqdn: credit-viewer.k8s.ucar.edu
     secretName: incommon-cert-credit-viewer
   container: 
-    image: docker.io/mattrncar/actix-docker-image:v1
-    port: 8080
+    image: docker.io/mattrncar/credit-viewer-backend:v1
+    port: 8000
     memory: 1G
     cpu: 2

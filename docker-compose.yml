@@ -4,7 +4,6 @@ services:
       context: .
       dockerfile: backend/Dockerfile
     container_name: credit-viewer-backend
-    image: mattrncar/credit-viewer-backend:v1
     ports:
       - "8000:8000"
 
@@ -13,7 +12,6 @@ services:
       context: .
       dockerfile: nginx/Dockerfile
     container_name: credit-viewer-nginx
-    image: mattrncar/credit-viewer-nginx:v1
     ports:
       - "8080:80"
     depends_on:

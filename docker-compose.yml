@@ -5,8 +5,8 @@ services:
       dockerfile: backend/Dockerfile
     container_name: backend
     image: mattrncar/backend:v1
-    expose:
-      - "8000"
+    ports:
+      - "8000:8000"
 
   nginx:
     build:

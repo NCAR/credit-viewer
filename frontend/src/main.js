@@ -3,6 +3,7 @@ import Panzoom from "@panzoom/panzoom";
 
 
 
+
 async function fetchArrow() {
     const response = await fetch("/api/get_data");
     const arrayBuffer = await response.arrayBuffer();
@@ -20,7 +21,6 @@ async function fetchArrow() {
 
     console.log(rows, cols);
     console.log(reshaped_data[0].slice(0, 10));
-
 }
 
 fetchArrow().catch(console.error);

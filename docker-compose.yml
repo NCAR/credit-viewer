@@ -1,7 +1,10 @@
 services:
   backend:
-    build: ./backend
+    build:
+      context: .
+      dockerfile: backend/Dockerfile
     container_name: backend
+    image: mattrncar/backend:v1
     expose:
       - "8000"
 
@@ -10,6 +13,7 @@ services:
       context: .
       dockerfile: nginx/Dockerfile
     container_name: nginx
+    image: mattrncar/nginx:v1
     ports:
       - "8080:80"
     depends_on:

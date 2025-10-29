@@ -1,4 +1,7 @@
-// vite.config.js
 export default {
-  root: '.', // Vite will look for index.html in the root
+  root: '.',
+  // build: {
+    // reportCompressedSize: false,   // disables compressed size calculation
+    // chunkSizeWarningLimit: 1000,   // optional, in KB
+  // },
 };

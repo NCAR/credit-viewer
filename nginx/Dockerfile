@@ -1,5 +1,6 @@
 # Stage 1: build frontend with Vite
-FROM node:latest AS build-frontend
+FROM node:18-alpine AS build-frontend
+# FROM node:latest AS build-frontend
 WORKDIR /app
 COPY frontend/ ./frontend
 WORKDIR /app/frontend

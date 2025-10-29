@@ -3,6 +3,7 @@ services:
     build:
       context: .
       dockerfile: backend/Dockerfile
+    platform: linux/amd64
     container_name: credit-viewer-backend
     ports:
       - "8000:8000"
@@ -11,6 +12,7 @@ services:
     build:
       context: .
       dockerfile: nginx/Dockerfile
+    platform: linux/amd64
     container_name: credit-viewer-nginx
     ports:
       - "8080:80"

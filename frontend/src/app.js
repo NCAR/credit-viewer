@@ -41,7 +41,7 @@ let TMIN = -2, TMAX = 35;
 let WMIN =  0, WMAX = 50;
 
 async function loadGrid(filename) {
-  const res = await fetch(`src/data/${filename}`);
+  const res = await fetch(`/data/${filename}`);
   if (!res.ok) throw new Error(`Failed to load ${filename}: ${res.status}`);
   const json = await res.json();
   return {

@@ -1,8 +1,8 @@
 {
-  "name": "credit-viewer",
+  "name": "atlas-maplibre",
   "version": "1.0.0",
   "private": true,
-  "description": "",
+  "description": "ATLAS MapLibre Explorer",
   "scripts": {
     "dev": "vite",
     "build": "vite build",
@@ -15,8 +15,7 @@
     "vite": "^7.1.5"
   },
   "dependencies": {
-    "@panzoom/panzoom": "^4.6.0",
     "apache-arrow": "^11.0.0",
-    "numpy-parser": "^1.2.3"
+    "maplibre-gl": "^5.0.0"
   }
 }

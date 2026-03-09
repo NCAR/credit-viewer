@@ -1,12 +1,13 @@
 from fastapi import FastAPI
 from fastapi.responses import StreamingResponse
 from io import BytesIO
-from netcdf_utils import *
+# from netcdf_utils import *
 from pathlib import Path
 import numpy as np 
-
+import xarray as xr
 import pyarrow as pa
 import io
+
 
 
 
@@ -17,17 +18,38 @@ NETCDF_DIR = "./data"
 
 
 
+
+
+
+def netcdf_reader(netcdf_path):
+    return xr.open_dataset(netcdf_path)
+
+
+
+def get_variable_data(netcdf_data, variable_name, timestep, level):
+    variable = getattr(netcdf_data, variable_name)
+    return np.array(variable[timestep,level,:,:])
+
+
+
+
+
+
+
+
+
+
 app = FastAPI()
 
 
 
-@app.get("/get_data")
+@app.get("/get_data/{variable_name}")
 def get_data():
 
 # def get_data(netcdf_file, variable_name, timestep, level):
     ## TODO Get these from client ->
     netcdf_file = "QTUV_pred_2025-07-02T00Z_001.nc"
-    variable_name = 'Q'
+    # variable_name = 'Q'
     timestep = 0
     level = 0
     netcdf_path = Path(NETCDF_DIR, netcdf_file)
@@ -39,26 +61,13 @@ def get_data():
         v = get_variable_data(netcdf_data, 'V', timestep, level) 
         variable_data = np.sqrt(u**2 + v**2)
 
-    else:
+        data_min, data_max = 0, 50
+
+    elif variable_name == 'Q':
         variable_data = get_variable_data(
                     netcdf_data, variable_name, timestep, level) 
 
-
-
-
-
-    #-- Send NumPy Array ------------------------------------------------------
-
-    # arrayBuffer = io.BytesIO()
-    # np.save(arrayBuffer, variable_data)
-    # arrayBuffer.seek(0)
-
-    # return StreamingResponse(
-        # arrayBuffer,
-        # media_type="application/octet-stream"
-    # )
-
-
+        data_min, data_max = variable_data.min(), variable_data.max()
 
 
 
@@ -75,11 +84,14 @@ def get_data():
 
     # Metadata for client
     ##TODO Add netcdf info later
-    rows, cols = variable_data.shape
+    lat, lon = variable_data.shape
 
     table = table.replace_schema_metadata({
-        "rows": str(rows),
-        "cols": str(cols),
+        "variable_name": variable_name,
+        "lat": str(lat),
+        "lon": str(lon),
+        "data_min": str(data_min),
+        "data_max": str(data_max)
     })
 
     with pa.ipc.new_stream(stream, table.schema) as writer:

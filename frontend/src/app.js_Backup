@@ -94,11 +94,9 @@ ${define}
 in  vec2  a_merc;        // Mercator [0,1]
 in  vec2  a_uv;          // texture coords [0,1]
 out vec2  v_uv;
-out float v_merc_x;      // original merc x (no wrap offset) for bounds clipping
 uniform float u_world_offset; // -1, 0, or 1 world-widths for wrapping
 void main() {
   v_uv        = a_uv;
-  v_merc_x    = a_merc.x;
   gl_Position = projectTile(vec2(a_merc.x + u_world_offset, a_merc.y));
 }`;
 
@@ -109,17 +107,14 @@ const FRAG_SRC = (stops) => {
   ).join('\n');
   return `#version 300 es
 precision mediump float;
-in  vec2  v_uv;
-in  float v_merc_x;
-out vec4  fragColor;
+in  vec2 v_uv;
+out vec4 fragColor;
 uniform sampler2D u_data;
 uniform float     u_opacity;
 uniform float     u_vmin;
 uniform float     u_vmax;
 const int N = ${stops.length};
 void main() {
-  // Discard fragments from world-wrap copies that fall outside [-180,180]
-  if (v_merc_x < 0.0 || v_merc_x > 1.0) { fragColor = vec4(0.0); return; }
   float raw = texture(u_data, v_uv).r;
   if (raw < -1e9 || raw > 1e9) { fragColor = vec4(0.0); return; }
   float range = u_vmax - u_vmin;
@@ -294,7 +289,8 @@ function makeScalarLayer(id, grid, colorStops, vmin0, vmax0, toggleId, opacityId
       gl.uniform4f(uClip,  ...pd.clippingPlane);
 
       const uWorldOffset = gl.getUniformLocation(p, 'u_world_offset');
-      // Three world-copies for seamless Mercator panning; globe uses only center.
+      // In globe mode (projectionTransition > 0) only render the center copy —
+      // world-wrap offsets cause artifacts on the sphere.
       const wraps = pd.projectionTransition > 0 ? [0] : [-1, 0, 1];
       for (const wrap of wraps) {
         gl.uniform1f(uWorldOffset, wrap);
@@ -364,8 +360,6 @@ function bisect(arr, val) {
 
 function gridLookup(grid, lat, lng) {
   if (!grid) return NaN;
-  // Wrap longitude into -180..180
-  lng = ((lng + 180) % 360 + 360) % 360 - 180;
   const { values, latArr, lonArr, rows, cols } = grid;
 
   // Find surrounding lat indices (latArr may be descending)
@@ -430,7 +424,7 @@ function buildPopupHTML(lat, lng) {
   }
   if (windOn) {
     const w = gridLookup(WIND_GRID, lat, lng);
-    extra += `<div class="popup-zoom">${gridLabel(WIND_GRID, 'WIND').toUpperCase()} ${Math.max(0, w).toFixed(4)}</div>`;
+    extra += `<div class="popup-zoom">${gridLabel(WIND_GRID, 'WIND').toUpperCase()} ${w.toFixed(4)}</div>`;
   }
   return `
     <div class="popup-coords"><span style="color:var(--ghost)">LAT</span> ${lat.toFixed(5)}°<br><span style="color:var(--ghost)">LNG</span> ${lng.toFixed(5)}°</div>
@@ -452,8 +446,7 @@ map.on('mousemove', (e) => {
   if (lat < -90 || lat > 90) { clearHUD(); return; }
 
   document.getElementById('lat-val').textContent = lat.toFixed(4);
-  const lngWrapped = ((lng + 180) % 360 + 360) % 360 - 180;
-  document.getElementById('lng-val').textContent = lngWrapped.toFixed(4);
+  document.getElementById('lng-val').textContent = lng.toFixed(4);
 
   const tempOn = document.getElementById('temp-toggle').checked;
   const windOn = document.getElementById('wind-toggle').checked;
@@ -470,7 +463,7 @@ map.on('mousemove', (e) => {
 
   if (windOn) {
     const w = gridLookup(WIND_GRID, lat, lng);
-    document.getElementById('wind-val').textContent = isNaN(w) ? '—' : Math.max(0, w).toFixed(4);
+    document.getElementById('wind-val').textContent = isNaN(w) ? '—' : w.toFixed(4);
     windHud.style.display = '';
   } else {
     windHud.style.display = 'none';
@@ -488,8 +481,7 @@ map.on('touchmove', (e) => {
   const lat = e.lngLat.lat, lng = e.lngLat.lng;
   if (lat < -90 || lat > 90) return;
   document.getElementById('lat-val').textContent = lat.toFixed(4);
-  const lngWrapped = ((lng + 180) % 360 + 360) % 360 - 180;
-  document.getElementById('lng-val').textContent = lngWrapped.toFixed(4);
+  document.getElementById('lng-val').textContent = lng.toFixed(4);
   if (tooltipActive && currentPopup) {
     currentPopup.setLngLat(e.lngLat).setHTML(buildPopupHTML(lat, lng));
   }

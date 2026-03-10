@@ -31,7 +31,7 @@ def get_data(variable_name: str):
     if variable_name == 'M':
         u = get_variable_data(netcdf_data, 'U')
         v = get_variable_data(netcdf_data, 'V')
-        variable_data = np.sqrt(u**2 + v**2)
+        variable_data = np.sqrt(np.maximum(0.0, u**2 + v**2))
         data_min, data_max = 0.0, 50.0
     elif variable_name == 'Q':
         variable_data = get_variable_data(netcdf_data, variable_name)

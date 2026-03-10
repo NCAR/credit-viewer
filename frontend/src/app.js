@@ -144,12 +144,8 @@ function buildMesh(gl, grid) {
 
   const { latArr, lonArr } = grid;
   const NY = latArr.length - 1;
-  const NX = lonArr.length - 1;
+  const NX = lonArr.length; // one extra column to close the seam at ±180
 
-  // latArr may be descending (90→-90); row 0 of the texture = latArr[0]
-  // OpenGL v=0 is the bottom of the texture, so:
-  //   if descending: latArr[0]=north=row0 → v=1 (top of screen, bottom of tex)
-  //   if ascending:  latArr[0]=south=row0 → v=0
   const latDesc = latArr[0] > latArr[latArr.length - 1];
 
   // Mercator x: lon mapped to [0,1] world space (-180→180)
@@ -160,11 +156,11 @@ function buildMesh(gl, grid) {
   for (let iy = 0; iy <= NY; iy++) {
     const lat = latArr[iy];
     const my  = lat2merc(lat);
-    // UV v: with UNPACK_FLIP_Y=false, data row 0 is at v=0 (GL bottom).
-    // For descending lat (row 0 = north), north must appear at top → v=1, so we use iy/NY.
     const v = latDesc ? (iy / NY) : 1.0 - (iy / NY);
     for (let ix = 0; ix <= NX; ix++) {
-      const mx = lon2merc(lonArr[ix]);
+      // For the extra closing column, place it at lon=180 (mx=1.0) with u=1.0
+      // which wraps back to u=0 in the texture, closing the seam.
+      const mx = ix < lonArr.length ? lon2merc(lonArr[ix]) : 1.0;
       const u  = ix / NX;
       verts.push(mx, my, u, v);
     }

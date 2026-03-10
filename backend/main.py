@@ -1,125 +1,102 @@
-from fastapi import FastAPI
+from fastapi import FastAPI, HTTPException
 from fastapi.responses import StreamingResponse
-from io import BytesIO
-# from netcdf_utils import *
 from pathlib import Path
-import numpy as np 
+import numpy as np
 import xarray as xr
 import pyarrow as pa
 import io
 
-
-
-
-
-
-##TODO Change this to CREDIT output dir
 NETCDF_DIR = "./data"
-
-
-
-
-
+NETCDF_FILE = "QTUV_pred_2025-07-02T00Z_001.nc"  # TODO: receive from client
+TIMESTEP = 0   # TODO: receive from client
+LEVEL = 12     # TODO: receive from client
 
 def netcdf_reader(netcdf_path):
     return xr.open_dataset(netcdf_path)
 
-
-
-def get_variable_data(netcdf_data, variable_name, timestep, level):
+def get_variable_data(netcdf_data, variable_name):
     variable = getattr(netcdf_data, variable_name)
-    return np.array(variable[timestep,level,:,:])
-
-
-
-
-
-
-
-
-
+    return np.array(variable[TIMESTEP, LEVEL, :, :])
 
 app = FastAPI()
 
-
-
 @app.get("/get_data/{variable_name}")
-def get_data():
-
-# def get_data(netcdf_file, variable_name, timestep, level):
-    ## TODO Get these from client ->
-    netcdf_file = "QTUV_pred_2025-07-02T00Z_001.nc"
-    # variable_name = 'Q'
-    timestep = 0
-    level = 0
-    netcdf_path = Path(NETCDF_DIR, netcdf_file)
+def get_data(variable_name: str):
+    netcdf_path = Path(NETCDF_DIR, NETCDF_FILE)
+    if not netcdf_path.exists():
+        raise HTTPException(status_code=404, detail=f"File not found: {NETCDF_FILE}")
 
     netcdf_data = netcdf_reader(netcdf_path)
 
     if variable_name == 'M':
-        u = get_variable_data(netcdf_data, 'U', timestep, level) 
-        v = get_variable_data(netcdf_data, 'V', timestep, level) 
+        u = get_variable_data(netcdf_data, 'U')
+        v = get_variable_data(netcdf_data, 'V')
         variable_data = np.sqrt(u**2 + v**2)
-
-        data_min, data_max = 0, 50
-
+        data_min, data_max = 0.0, 50.0
     elif variable_name == 'Q':
-        variable_data = get_variable_data(
-                    netcdf_data, variable_name, timestep, level) 
+        variable_data = get_variable_data(netcdf_data, variable_name)
+        data_min, data_max = 0.0, 0.02
+    else:
+        try:
+            variable_data = get_variable_data(netcdf_data, variable_name)
+        except AttributeError:
+            raise HTTPException(status_code=400, detail=f"Variable '{variable_name}' not found in dataset")
+        data_min, data_max = float(variable_data.min()), float(variable_data.max())
 
-        data_min, data_max = variable_data.min(), variable_data.max()
+    # -- Get lat/lon coordinate arrays, normalise lon to -180→180 --------------
+    lat_arr = np.array(netcdf_data.latitude, dtype=np.float32)
+    lon_arr = np.array(netcdf_data.longitude, dtype=np.float32)
 
+    # Roll 0→360 longitude to -180→180 so the mesh aligns with Mercator
+    if lon_arr.max() > 180:
+        split = np.searchsorted(lon_arr, 180)
+        lon_arr = np.concatenate([lon_arr[split:] - 360, lon_arr[:split]])
+        variable_data = np.concatenate([variable_data[:, split:], variable_data[:, :split]], axis=1)
 
+    lat_hex = lat_arr.tobytes().hex()
+    lon_hex = lon_arr.tobytes().hex()
 
-
-    #-- Send array with Apache Arrow ------------------------------------------
-
-    # NOTE Might be able to send Zarr files directly from
-        # CREDIT output to the client
-
-
-    stream = io.BytesIO()
-
-    table = pa.table({'variable_data': variable_data.flatten()})
-
-    # Metadata for client
-    ##TODO Add netcdf info later
-    lat, lon = variable_data.shape
-
+    # -- Send array with Apache Arrow ------------------------------------------
+    n_lat, n_lon = variable_data.shape
+    table = pa.table({
+        'variable_data': variable_data.flatten().astype(np.float32),
+    })
     table = table.replace_schema_metadata({
         "variable_name": variable_name,
-        "lat": str(lat),
-        "lon": str(lon),
+        "n_lat": str(n_lat),
+        "n_lon": str(n_lon),
         "data_min": str(data_min),
-        "data_max": str(data_max)
+        "data_max": str(data_max),
+        "lat": lat_hex,
+        "lon": lon_hex,
     })
 
+    stream = io.BytesIO()
     with pa.ipc.new_stream(stream, table.schema) as writer:
         writer.write_table(table)
-
     stream.seek(0)
 
     return StreamingResponse(
-        stream, media_type="application/vnd.apache.arrow.stream")
+        stream,
+        media_type="application/vnd.apache.arrow.stream",
+    )
 
-
-
-
-
-
-
-
-    # m255 = normalize(m, (0, 182), (0, 255), True)
-    # m8 = np.around(m255).astype(np.uint8)
-
-    # Save the image to a BytesIO object (in memory)
-    # img_byte_arr = BytesIO()
-    # img.save(img_byte_arr, format="PNG")
-    # img_byte_arr.seek(0)
-
-    # Return the image in the response
-    # return Response(content=img_byte_arr.read(), media_type="image/png")
-
-
-
-
+@app.get("/debug")
+def debug():
+    netcdf_path = Path(NETCDF_DIR, NETCDF_FILE)
+    ds = netcdf_reader(netcdf_path)
+    lat = np.array(ds.latitude, dtype=np.float32)
+    lon = np.array(ds.longitude, dtype=np.float32)
+    return {
+        "lat_len": len(lat),
+        "lon_len": len(lon),
+        "lat_min": float(lat.min()),
+        "lat_max": float(lat.max()),
+        "lat_first": float(lat[0]),
+        "lat_last": float(lat[-1]),
+        "lon_min": float(lon.min()),
+        "lon_max": float(lon.max()),
+        "lon_first": float(lon[0]),
+        "lon_last": float(lon[-1]),
+        "variables": list(ds.data_vars),
+    }

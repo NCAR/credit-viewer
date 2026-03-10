@@ -1,5 +1,6 @@
 import maplibregl from 'maplibre-gl';
 import 'maplibre-gl/dist/maplibre-gl.css';
+import { tableFromIPC } from 'apache-arrow';
 
 document.addEventListener('DOMContentLoaded', function () {
 
@@ -34,30 +35,50 @@ function hideLabels() {
   });
 }
 
-// ── SERVER DATA — loaded from JSON files at root ──
-// Expected schema: { variable_name, data_min, data_max, lat, lon, data[] }
+// ── SERVER DATA — fetched from backend via Apache Arrow IPC stream ──
+const API_BASE = '/api';
+
 let TEMP_GRID = null, WIND_GRID = null;
 let TMIN = -2, TMAX = 35;
 let WMIN =  0, WMAX = 50;
 
-async function loadGrid(filename) {
-  const res = await fetch(`/data/${filename}`);
-  if (!res.ok) throw new Error(`Failed to load ${filename}: ${res.status}`);
-  const json = await res.json();
-  return {
-    values: new Float32Array(json.data),
-    rows: json.lat,
-    cols: json.lon,
-    vmin: json.data_min,
-    vmax: json.data_max,
-    name: json.variable_name,
+async function loadVariable(variableName) {
+  const res = await fetch(`${API_BASE}/get_data/${variableName}`);
+  if (!res.ok) throw new Error(`Failed to load variable '${variableName}': ${res.status}`);
+  const table = await tableFromIPC(res);
+  const meta  = table.schema.metadata;
+
+  const colData = table.getChild('variable_data');
+
+  const values = new Float32Array(colData.length);
+  for (let i = 0; i < colData.length; i++) values[i] = colData.get(i);
+
+  // Decode lat/lon from hex-encoded float32 bytes in metadata
+  function hexToFloat32Array(hex) {
+    const bytes = new Uint8Array(hex.match(/.{1,2}/g).map(b => parseInt(b, 16)));
+    return new Float32Array(bytes.buffer);
+  }
+  const latArr = hexToFloat32Array(meta.get('lat'));
+  const lonArr = hexToFloat32Array(meta.get('lon'));
+
+  const grid = {
+    values,
+    latArr,
+    lonArr,
+    rows: parseInt(meta.get('n_lat')),
+    cols: parseInt(meta.get('n_lon')),
+    vmin: parseFloat(meta.get('data_min')),
+    vmax: parseFloat(meta.get('data_max')),
+    name: meta.get('variable_name'),
   };
+
+  return grid;
 }
 
 async function loadAllData() {
   const [temp, wind] = await Promise.all([
-    loadGrid('temperature.json'),
-    loadGrid('sst.json'),
+    loadVariable('Q'),
+    loadVariable('M'),
   ]);
   TEMP_GRID = temp;  TMIN = temp.vmin;  TMAX = temp.vmax;
   WIND_GRID = wind;  WMIN = wind.vmin;  WMAX = wind.vmax;
@@ -111,23 +132,44 @@ ${stopLines}
 
 // Build a subdivided quad mesh in Mercator [0,1] space + matching UVs.
 // Subdivision ensures globe curvature is smooth (no visible straight-edge artifacts).
-function buildMesh(gl, NX, NY) {
+// Build mesh using the actual latArr/lonArr from the grid.
+// One vertex row per latitude, one vertex column per longitude —
+// this ensures Mercator y and UV v are exact at every grid line,
+// preventing the stretch/pinch distortion from linear UV interpolation.
+function buildMesh(gl, grid) {
   const lat2merc = lat => {
     const r = lat * Math.PI / 180;
     return (1 - Math.log(Math.tan(r) + 1 / Math.cos(r)) / Math.PI) / 2;
   };
-  const yN = lat2merc(85.051), yS = lat2merc(-85.051);
+
+  const { latArr, lonArr } = grid;
+  const NY = latArr.length - 1;
+  const NX = lonArr.length - 1;
+
+  // latArr may be descending (90→-90); row 0 of the texture = latArr[0]
+  // OpenGL v=0 is the bottom of the texture, so:
+  //   if descending: latArr[0]=north=row0 → v=1 (top of screen, bottom of tex)
+  //   if ascending:  latArr[0]=south=row0 → v=0
+  const latDesc = latArr[0] > latArr[latArr.length - 1];
+
+  // Mercator x: lon mapped to [0,1] world space (-180→180)
+  const lon2merc = lon => (lon + 180) / 360;
 
   // Interleaved: merc.x, merc.y, uv.u, uv.v  (4 floats per vertex)
   const verts = [];
   for (let iy = 0; iy <= NY; iy++) {
-    const fy = iy / NY;
-    const my = yN + fy * (yS - yN);
+    const lat = latArr[iy];
+    const my  = lat2merc(lat);
+    // UV v: with UNPACK_FLIP_Y=false, data row 0 is at v=0 (GL bottom).
+    // For descending lat (row 0 = north), north must appear at top → v=1, so we use iy/NY.
+    const v = latDesc ? (iy / NY) : 1.0 - (iy / NY);
     for (let ix = 0; ix <= NX; ix++) {
-      const fx = ix / NX;
-      verts.push(fx, my, fx, fy);
+      const mx = lon2merc(lonArr[ix]);
+      const u  = ix / NX;
+      verts.push(mx, my, u, v);
     }
   }
+
   const idx = [];
   for (let iy = 0; iy < NY; iy++) {
     for (let ix = 0; ix < NX; ix++) {
@@ -198,7 +240,7 @@ function makeScalarLayer(id, grid, colorStops, vmin0, vmax0, toggleId, opacityId
 
     onAdd(m, gl) {
       tex  = uploadTexture(gl);
-      mesh = buildMesh(gl, 64, 32); // 64×32 subdivisions — smooth enough for globe
+      mesh = buildMesh(gl, grid); // one vertex per lat/lon grid point
     },
 
     render(gl, args) {
@@ -251,7 +293,10 @@ function makeScalarLayer(id, grid, colorStops, vmin0, vmax0, toggleId, opacityId
       gl.uniform4f(uClip,  ...pd.clippingPlane);
 
       const uWorldOffset = gl.getUniformLocation(p, 'u_world_offset');
-      for (const wrap of [-1, 0, 1]) {
+      // In globe mode (projectionTransition > 0) only render the center copy —
+      // world-wrap offsets cause artifacts on the sphere.
+      const wraps = pd.projectionTransition > 0 ? [0] : [-1, 0, 1];
+      for (const wrap of wraps) {
         gl.uniform1f(uWorldOffset, wrap);
         gl.drawElements(gl.TRIANGLES, mesh.count, gl.UNSIGNED_INT, 0);
       }
@@ -306,16 +351,43 @@ function addWindLayer() {
   ));
 }
 
+// Binary search helper for sorted coordinate arrays
+function bisect(arr, val) {
+  let lo = 0, hi = arr.length - 1;
+  while (lo < hi) {
+    const mid = (lo + hi) >> 1;
+    if (arr[mid] < val) lo = mid + 1;
+    else hi = mid;
+  }
+  return lo;
+}
+
 function gridLookup(grid, lat, lng) {
   if (!grid) return NaN;
-  const { values, rows, cols } = grid;
-  const latMax = 90, latMin = -90, lngMin = -180, lngMax = 180;
-  const gr = (latMax - lat) / (latMax - latMin) * (rows - 1);
-  const gc = (lng - lngMin) / (lngMax - lngMin) * (cols - 1);
-  const r0 = Math.max(0, Math.min(rows - 2, Math.floor(gr)));
-  const c0 = Math.max(0, Math.min(cols - 2, Math.floor(gc)));
-  const r1 = r0 + 1, c1 = c0 + 1;
-  const rf = gr - r0, cf = gc - c0;
+  const { values, latArr, lonArr, rows, cols } = grid;
+
+  // Find surrounding lat indices (latArr may be descending)
+  const latDesc = latArr[0] > latArr[latArr.length - 1];
+  let r0, r1, rf;
+  if (latDesc) {
+    // descending: search reversed
+    const ri = bisect(latArr.slice().reverse(), lat);
+    r0 = Math.max(0, Math.min(rows - 2, rows - 1 - ri));
+    r1 = r0 + 1;
+    rf = (latArr[r0] - lat) / (latArr[r0] - latArr[r1] || 1);
+  } else {
+    const ri = bisect(latArr, lat);
+    r0 = Math.max(0, Math.min(rows - 2, ri - 1));
+    r1 = r0 + 1;
+    rf = (lat - latArr[r0]) / (latArr[r1] - latArr[r0] || 1);
+  }
+
+  // Find surrounding lon indices (lonArr assumed ascending)
+  const ci = bisect(lonArr, lng);
+  const c0 = Math.max(0, Math.min(cols - 2, ci - 1));
+  const c1 = c0 + 1;
+  const cf = (lng - lonArr[c0]) / (lonArr[c1] - lonArr[c0] || 1);
+
   const v00 = values[r0 * cols + c0], v01 = values[r0 * cols + c1];
   const v10 = values[r1 * cols + c0], v11 = values[r1 * cols + c1];
   if (isNaN(v00) || isNaN(v01) || isNaN(v10) || isNaN(v11)) return NaN;
@@ -352,11 +424,11 @@ function buildPopupHTML(lat, lng) {
   let extra = '';
   if (tempOn) {
     const t = gridLookup(TEMP_GRID, lat, lng);
-    extra += `<div class="popup-zoom">${gridLabel(TEMP_GRID, 'TEMP').toUpperCase()} ${t.toFixed(1)}</div>`;
+    extra += `<div class="popup-zoom">${gridLabel(TEMP_GRID, 'TEMP').toUpperCase()} ${t.toFixed(4)}</div>`;
   }
   if (windOn) {
     const w = gridLookup(WIND_GRID, lat, lng);
-    extra += `<div class="popup-zoom">${gridLabel(WIND_GRID, 'WIND').toUpperCase()} ${w.toFixed(1)}</div>`;
+    extra += `<div class="popup-zoom">${gridLabel(WIND_GRID, 'WIND').toUpperCase()} ${w.toFixed(4)}</div>`;
   }
   return `
     <div class="popup-coords"><span style="color:var(--ghost)">LAT</span> ${lat.toFixed(5)}°<br><span style="color:var(--ghost)">LNG</span> ${lng.toFixed(5)}°</div>
@@ -387,7 +459,7 @@ map.on('mousemove', (e) => {
 
   if (tempOn) {
     const t = gridLookup(TEMP_GRID, lat, lng);
-    document.getElementById('temp-val').textContent = t.toFixed(1) + '°C';
+    document.getElementById('temp-val').textContent = t.toFixed(4) + '°C';
     tempHud.style.display = '';
   } else {
     tempHud.style.display = 'none';
@@ -395,7 +467,7 @@ map.on('mousemove', (e) => {
 
   if (windOn) {
     const w = gridLookup(WIND_GRID, lat, lng);
-    document.getElementById('wind-val').textContent = isNaN(w) ? '—' : w.toFixed(1);
+    document.getElementById('wind-val').textContent = isNaN(w) ? '—' : w.toFixed(4);
     windHud.style.display = '';
   } else {
     windHud.style.display = 'none';
